@@ -1,16 +1,50 @@
-import { Stack, StackProps } from 'aws-cdk-lib';
+import { aws_opensearchservice, Stack, StackProps } from 'aws-cdk-lib';
+import { EngineVersion } from 'aws-cdk-lib/aws-opensearchservice';
+import { Domain } from 'aws-cdk-lib/aws-opensearchservice';
 import { Construct } from 'constructs';
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 export class HelloCdkStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    // The code that defines your stack goes here
-
-    // example resource
-    // const queue = new sqs.Queue(this, 'HelloCdkQueue', {
-    //   visibilityTimeout: cdk.Duration.seconds(300)
-    // });
-  }
+    const domain = new Domain(this, 'Domain', {
+        version: EngineVersion.OPENSEARCH_1_0,
+        capacity: {
+          masterNodes: 3,
+          masterNodeInstanceType: 'm5.large.search',
+          dataNodes: 3,
+          dataNodeInstanceType: 'm5.large.search'
+        },
+        ebs: {
+          volumeSize: 100
+        },
+        zoneAwareness: {
+          availabilityZoneCount: 3
+        }
+      });
+  
+      const cfndomain = domain.node.defaultChild as aws_opensearchservice.CfnDomain;
+      cfndomain.clusterConfig = {
+        dedicatedMasterCount: 3,
+        dedicatedMasterEnabled: true,
+        dedicatedMasterType: 'm5.large.search',
+        instanceCount: 3,
+        instanceType: 'm5.large.search',
+        nodeOptions: [
+          {
+            nodeConfig: {
+              count: 3,
+              enabled: true,
+              type: 'm5.large.search',
+            },
+            nodeType: 'coordinator',
+          },
+        ],
+        zoneAwarenessConfig: {
+          availabilityZoneCount: 3,
+        },
+        zoneAwarenessEnabled: true,
+      };
+    }
+  
 }
